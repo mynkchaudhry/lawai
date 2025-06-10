@@ -11,6 +11,8 @@ from contextlib import asynccontextmanager
 import traceback
 from datetime import datetime
 
+
+
 import tiktoken
 import redis.asyncio as redis_async
 import uvicorn
@@ -75,9 +77,6 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     available_models: List[str]
-
-class BulkDeleteRequest(BaseModel):
-    message_indices: List[int]
 
 # === Redis Configuration ===
 # Updated Redis configuration for GCP
@@ -884,99 +883,7 @@ async def delete_conversation(conversation_id: str):
             detail=f"Error deleting conversation: {str(e)}"
         )
 
-@app.delete("/conversation/{conversation_id}/message/{message_index}")
-async def delete_message(conversation_id: str, message_index: int):
-    """Delete a specific message from a conversation by its index"""
-    if not redis_client:
-        raise HTTPException(
-            status_code=500,
-            detail="Redis client not initialized"
-        )
-    
-    try:
-        conversation = await get_conversation(conversation_id)
-        if not conversation:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Conversation with ID {conversation_id} not found"
-            )
-        
-        if message_index < 0 or message_index >= len(conversation):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid message index {message_index}"
-            )
-        
-        removed_message = conversation.pop(message_index)
-        
-        await redis_client.setex(
-            f"conv:{conversation_id}", 
-            REDIS_TTL, 
-            json.dumps(conversation)
-        )
-        
-        return {
-            "status": "success", 
-            "message": f"Message at index {message_index} deleted",
-            "removed": removed_message
-        }
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        logger.error(f"Error deleting message: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error deleting message: {str(e)}"
-        )
 
-@app.delete("/conversation/{conversation_id}/messages")
-async def delete_multiple_messages(conversation_id: str, request: BulkDeleteRequest):
-    """Delete multiple messages from a conversation by their indices"""
-    if not redis_client:
-        raise HTTPException(
-            status_code=500,
-            detail="Redis client not initialized"
-        )
-    
-    try:
-        conversation = await get_conversation(conversation_id)
-        if not conversation:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Conversation with ID {conversation_id} not found"
-            )
-        
-        indices = sorted(request.message_indices, reverse=True)
-        
-        if any(idx < 0 or idx >= len(conversation) for idx in indices):
-            raise HTTPException(
-                status_code=400,
-                detail="One or more invalid message indices"
-            )
-        
-        removed = []
-        for idx in indices:
-            removed.append(conversation.pop(idx))
-        
-        await redis_client.setex(
-            f"conv:{conversation_id}", 
-            REDIS_TTL, 
-            json.dumps(conversation)
-        )
-        
-        return {
-            "status": "success", 
-            "message": f"Deleted {len(indices)} messages",
-            "removed": removed
-        }
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        logger.error(f"Error deleting messages: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error deleting messages: {str(e)}"
-        )
 
 # === Additional GCP-specific endpoints ===
 @app.get("/")
