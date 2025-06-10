@@ -80,7 +80,7 @@ class HealthResponse(BaseModel):
 
 # === Redis Configuration ===
 # Updated Redis configuration for GCP
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_HOST = os.getenv("REDIS_HOST", "10.128.0.4")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
