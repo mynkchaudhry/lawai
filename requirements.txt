@@ -1,25 +1,14 @@
-# Core FastAPI and web framework
 fastapi
 uvicorn[standard]
-pydantic
 python-dotenv
-python-multipart
-
-# Redis for caching and rate limiting
-redis
-fastapi-limiter
-
-# LangChain and AI libraries
+redis>=4.2.0,<5.0.0
+tiktoken
 langchain
 langchain-openai
 langchain-pinecone
 langchain-core
-openai
-tiktoken
-
-# Vector store and embeddings
-pinecone-client
 sentence-transformers
-
-# Utility libraries
-numpy
+fastapi-limiter
+pydantic
+gunicorn
+pinecone-client
